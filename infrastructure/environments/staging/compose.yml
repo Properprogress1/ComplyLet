@@ -1,0 +1,47 @@
+services:
+  api:
+    image: "${STAGING_API_IMAGE:?Set the reviewed staging API image}"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: [/tmp]
+    environment:
+      APP_ORIGIN: "${STAGING_APP_ORIGIN:?Set the exact HTTPS origin}"
+      OIDC_ISSUER: "${STAGING_OIDC_ISSUER:?Set the staging HTTPS issuer}"
+      OIDC_CLIENT_ID: "${STAGING_OIDC_CLIENT_ID:?Set the staging OIDC client ID}"
+      DB_URL: "${STAGING_DB_URL:?Set the staging JDBC URL with certificate verification}"
+      DB_USER: "${STAGING_DB_USER:?Set the staging runtime database role}"
+      SPRING_CONFIG_IMPORT: configtree:/run/secrets/
+      SESSION_COOKIE_SECURE: "true"
+      FLYWAY_ENABLED: "false"
+      OPENAPI_ENABLED: "false"
+      SERVER_ADDRESS: 0.0.0.0
+      DEBUG: "false"
+    secrets: [DB_PASSWORD, OIDC_CLIENT_SECRET]
+
+  web:
+    image: "${STAGING_WEB_IMAGE:?Set the reviewed staging web image}"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /data:uid=65532,gid=65532,mode=0700
+      - /config:uid=65532,gid=65532,mode=0700
+    environment:
+      XDG_DATA_HOME: /data
+      XDG_CONFIG_HOME: /config
+      STAGING_HOST: "${STAGING_HOST:?Set the staging certificate DNS name}"
+    ports:
+      - "127.0.0.1:${STAGING_HTTPS_PORT:-8443}:8443"
+    secrets: [tls_certificate, tls_private_key]
+    depends_on: [api]
+
+secrets:
+  DB_PASSWORD:
+    file: "${STAGING_DB_PASSWORD_FILE:?Set the staging database password file}"
+  OIDC_CLIENT_SECRET:
+    file: "${STAGING_OIDC_CLIENT_SECRET_FILE:?Set the staging OIDC secret file}"
+  tls_certificate:
+    file: "${STAGING_TLS_CERTIFICATE_FILE:?Set the staging certificate chain file}"
+  tls_private_key:
+    file: "${STAGING_TLS_PRIVATE_KEY_FILE:?Set the staging private key file}"

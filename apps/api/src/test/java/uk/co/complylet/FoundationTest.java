@@ -26,12 +26,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest(classes = {ComplyLet.class, FoundationTest.TestClient.class},
-        properties = "debug=false")
+        properties = {"debug=false", "springdoc.api-docs.enabled=true"})
 @AutoConfigureMockMvc
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class FoundationTest {
@@ -80,6 +81,8 @@ class FoundationTest {
             addMember(member, BETA, "bob", "ORGANISATION_OWNER", true);
             addMember(member, BETA, "alice", "COMPLIANCE_MANAGER", false);
             addMember(member, ALPHA, "landlord", "LANDLORD_VIEWER", true);
+            addMember(member, ALPHA, "multi", "COMPLIANCE_MANAGER", true);
+            addMember(member, BETA, "multi", "COMPLIANCE_MANAGER", true);
         }
     }
 
@@ -114,6 +117,51 @@ class FoundationTest {
         http.perform(get("/api/v1/workspaces").with(oidcLogin().idToken(token ->
                 token.issuer("https://different.example.test").subject("alice").claim("email_verified", true))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void browserSessionManagementRequiresVerifiedIdentity() throws Exception {
+        http.perform(get("/api/v1/sessions")).andExpect(status().isUnauthorized());
+        http.perform(get("/api/v1/sessions").with(user("alice", false))).andExpect(status().isForbidden());
+        http.perform(delete("/api/v1/sessions/{id}", UUID.randomUUID())
+                        .with(user("alice", false)).with(csrf()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void requiresAnExplicitRouteGrantAndVerifiedIdentityForApiDocs() throws Exception {
+        http.perform(get("/api/v1/unregistered").with(user("alice", true)))
+                .andExpect(status().isForbidden());
+        http.perform(get("/v3/api-docs")).andExpect(status().isUnauthorized());
+        http.perform(get("/v3/api-docs").with(user("alice", false))).andExpect(status().isForbidden());
+        http.perform(get("/v3/api-docs").with(user("alice", true))).andExpect(status().isOk());
+        http.perform(get("/api/v1/session").with(user("alice", true)))
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("Referrer-Policy", "no-referrer"))
+                .andExpect(header().exists("Content-Security-Policy"))
+                .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("no-store")));
+    }
+
+    @Test
+    void workspaceBindingNarrowsDatabaseVisibilityForMultiWorkspaceActors() throws Exception {
+        http.perform(get("/api/v1/workspaces").with(user("multi", true)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2));
+        try (var connection = runtime.getConnection(); var query = connection.createStatement()) {
+            connection.setAutoCommit(false);
+            query.execute("SELECT set_config('complylet.issuer', '" + ISSUER + "', true)");
+            query.execute("SELECT set_config('complylet.subject', 'multi', true)");
+            for (UUID workspace : new UUID[] {ALPHA, BETA}) {
+                query.execute("SELECT set_config('complylet.organisation', '" + workspace + "', true)");
+                try (var result = query.executeQuery("""
+                        SELECT o.id FROM organisations o JOIN memberships m ON m.organisation_id = o.id
+                        """)) {
+                    assertThat(result.next()).isTrue();
+                    assertThat(result.getObject(1, UUID.class)).isEqualTo(workspace);
+                    assertThat(result.next()).isFalse();
+                }
+            }
+            connection.rollback();
+        }
     }
 
     @Test

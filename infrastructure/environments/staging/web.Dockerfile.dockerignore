@@ -1,0 +1,9 @@
+**
+!apps/
+!apps/web/
+!apps/web/dist/
+!apps/web/dist/**
+!infrastructure/
+!infrastructure/environments/
+!infrastructure/environments/staging/
+!infrastructure/environments/staging/Caddyfile

@@ -42,10 +42,46 @@ test('sends the session CSRF token when selecting a workspace', async () => {
   })
   vi.stubGlobal('fetch', fetchMock)
   await renderApp()
-  fireEvent.click(await screen.findByRole('button', { name: 'Local agency' }))
+  fireEvent.click(await screen.findByRole('button', { name: /^Local agency.*Organisation owner$/ }))
   expect((await screen.findByText('Selected workspace: Local agency')).textContent).toBeTruthy()
   expect(fetchMock).toHaveBeenCalledWith(`/api/v1/workspaces/${workspace.id}/selection`, expect.objectContaining({
     method: 'POST',
     headers: { 'X-CSRF-TOKEN': 'csrf' },
   }))
+})
+
+test('shows guidance when the verified account has no organisations', async () => {
+  vi.stubGlobal('fetch', vi.fn(async (path: string) => path.endsWith('/session')
+    ? Response.json({ csrfToken: 'csrf', csrfHeader: 'X-CSRF-TOKEN' })
+    : Response.json([])))
+  await renderApp()
+  expect((await screen.findByRole('heading', { name: 'No organisations yet' })).textContent).toBeTruthy()
+  expect(screen.getByText(/Ask your organisation administrator/)).toBeTruthy()
+})
+
+test('retries a failed organisation request without reloading the account', async () => {
+  let attempts = 0
+  const fetchMock = vi.fn(async (path: string) => {
+    if (path.endsWith('/session')) return Response.json({ csrfToken: 'csrf', csrfHeader: 'X-CSRF-TOKEN' })
+    return attempts++ === 0 ? new Response(null, { status: 500 }) : Response.json([])
+  })
+  vi.stubGlobal('fetch', fetchMock)
+  await renderApp()
+  expect((await screen.findByRole('alert')).textContent).toMatch(/Organisations could not be loaded/)
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+  expect(await screen.findByRole('heading', { name: 'No organisations yet' })).toBeTruthy()
+  expect(fetchMock.mock.calls.filter(([path]) => path.endsWith('/session'))).toHaveLength(1)
+})
+
+test('loads browser sessions only when the disclosure is opened', async () => {
+  const fetchMock = vi.fn(async (path: string) => path.endsWith('/session')
+    ? Response.json({ csrfToken: 'csrf', csrfHeader: 'X-CSRF-TOKEN' })
+    : Response.json([]))
+  vi.stubGlobal('fetch', fetchMock)
+  await renderApp()
+  const disclosure = await screen.findByText('Browser sessions', { exact: true })
+  expect(fetchMock.mock.calls.some(([path]) => path.endsWith('/sessions'))).toBe(false)
+  fireEvent.click(disclosure)
+  expect(await screen.findByText('No active browser sessions.')).toBeTruthy()
+  expect(fetchMock.mock.calls.some(([path]) => path.endsWith('/sessions'))).toBe(true)
 })

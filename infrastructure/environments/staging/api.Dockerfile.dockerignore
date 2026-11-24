@@ -1,0 +1,5 @@
+**
+!apps/
+!apps/api/
+!apps/api/target/
+!apps/api/target/complylet-api-0.1.0-SNAPSHOT.jar

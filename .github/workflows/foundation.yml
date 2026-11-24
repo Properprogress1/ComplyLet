@@ -1,0 +1,36 @@
+name: Foundation
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - run: make setup
+      - run: make test
+      - run: docker compose config --quiet
+      - run: corepack pnpm --filter @complylet/web exec playwright install --with-deps chromium
+      - name: End-to-end OIDC
+        run: |
+          make dev > /tmp/complylet-dev.log 2>&1 &
+          trap 'cat /tmp/complylet-dev.log; docker compose down' EXIT
+          for attempt in {1..180}; do
+            if curl -fsS http://localhost:8081/actuator/health && curl -fsS http://localhost:5173/ > /dev/null; then
+              make seed
+              make e2e
+              exit
+            fi
+            sleep 2
+          done
+          exit 1

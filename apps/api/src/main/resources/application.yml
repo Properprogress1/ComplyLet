@@ -1,0 +1,52 @@
+server:
+  port: 8081
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        name: COMPLYLET_SESSION
+        http-only: true
+        secure: ${SESSION_COOKIE_SECURE:true}
+        same-site: lax
+  error:
+    include-message: never
+    include-stacktrace: never
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER:complylet_runtime}
+    password: ${DB_PASSWORD}
+  flyway:
+    enabled: ${FLYWAY_ENABLED:false}
+    url: ${DB_URL}
+    user: ${DB_MIGRATION_USER:complylet_migration}
+    password: ${DB_MIGRATION_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+  mvc:
+    problemdetails:
+      enabled: true
+  security:
+    oauth2:
+      client:
+        registration:
+          complylet:
+            provider: complylet
+            client-id: ${OIDC_CLIENT_ID:complylet}
+            client-secret: ${OIDC_CLIENT_SECRET}
+            redirect-uri: ${APP_ORIGIN}/login/oauth2/code/{registrationId}
+            scope: openid,email
+            authorization-grant-type: authorization_code
+        provider:
+          complylet:
+            issuer-uri: ${OIDC_ISSUER}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+springdoc:
+  api-docs:
+    enabled: ${OPENAPI_ENABLED:false}

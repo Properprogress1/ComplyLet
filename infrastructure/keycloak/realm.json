@@ -1,0 +1,71 @@
+{
+  "realm": "complylet",
+  "enabled": true,
+  "registrationAllowed": true,
+  "verifyEmail": true,
+  "resetPasswordAllowed": true,
+  "bruteForceProtected": true,
+  "maxFailureWaitSeconds": 900,
+  "failureFactor": 5,
+  "eventsEnabled": true,
+  "eventsListeners": [
+    "jboss-logging"
+  ],
+  "accountTheme": "keycloak.v3",
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "no-reply@complylet.test"
+  },
+  "clients": [
+    {
+      "clientId": "complylet",
+      "secret": "local-oidc",
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:5173/login/oauth2/code/complylet"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:5173/",
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ],
+  "users": [
+    {
+      "id": "36d35cd2-bd09-4880-a71f-f040a2a7b111",
+      "username": "workspace-owner",
+      "email": "owner@complylet.test",
+      "firstName": "Local",
+      "lastName": "Owner",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "local-owner-only",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "cc5cc135-6a0f-4ace-929b-8bdc4aed017c",
+      "username": "second-owner",
+      "email": "second-owner@complylet.test",
+      "firstName": "Second",
+      "lastName": "Owner",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "local-second-only",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

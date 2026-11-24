@@ -4,9 +4,11 @@ Updated 24 November 2026.
 
 ## Current phase
 
-Phase 0 baseline documented. Phase 1 is in progress. The identity and organisation workspace slice passed its native verification. Phase 2 and tenant-owned business features remain gated.
+Phase 0 baseline documented. Phase 1 is in progress. The identity and organisation workspace foundation has been verified against native PostgreSQL. Self-service browser session management is implemented for the single-process application. Phase 2 and tenant-owned business features remain gated.
 
 ## Completed
+
+- Configured the staging gateway to strip `Server` and `X-Powered-By` from normal responses and gateway errors. Added an HTTPS response header smoke check for staging.
 
 - Reviewed the complete master specification and moved it from `docs.md/` to the canonical `docs/` directory. Initialised the empty Git repository.
 - Added persistent engineering instructions, product requirements, system and data diagrams, module map, database dictionary, STRIDE threat model, permission matrix, milestones and ADRs.
@@ -14,14 +16,16 @@ Phase 0 baseline documented. Phase 1 is in progress. The identity and organisati
 - Implemented OIDC authorization code with PKCE, server-side sessions, cookie and CSRF controls, verified-email API access, active membership discovery, workspace authorisation and audit event recording.
 - Added distinct PostgreSQL roles, explicit grants, tenant-aware audit attribution and transaction-local actor and tenant scope enforced by RLS.
 
+- Added verified-account browser session visibility and self-service revocation, with CSRF enforcement and security event logging. This uses the existing server-side session lifecycle and adds no Flyway migration. See [ADR 0003](adr/0003-browser-session-revocation.md).
+
 ## In progress
 
-- Complete the remaining identity lifecycle controls and verify the Docker-backed CI path.
+- Verify provider-backed MFA and step-up for privileged team changes, and verify the Docker-backed CI path.
 
 ## Pending and security concerns
 
-- Complete and verify invitation, audited membership administration, session revocation and device visibility, MFA, registration and recovery email, auth endpoint rate limits, and login anomaly monitoring. Local Keycloak has registration, email verification, password reset and brute-force controls configured.
-- Select production identity and revocable session storage, define the edge HTTPS security configuration, and verify operational controls. Local sessions are in memory.
+- Complete and verify invitation, audited membership administration, provider-side session termination, MFA, registration and recovery email, auth endpoint rate limits, and login anomaly monitoring. Local Keycloak has registration, email verification, password reset and brute-force controls configured.
+- Select production identity and revocable session storage, define the edge HTTPS security configuration, and verify operational controls. Local sessions are in memory. Application revocation denies subsequent requests with the old session. A live provider SSO session can still issue a fresh application session.
 - Finish the broader design system, shell and CI static analysis, security scans and SBOM. Add correlated logs and tracing before rollout.
 - Branch and resource permissions, platform access controls and tenant-safe exports become executable gates before their corresponding routes exist. Initial audit records use append-only runtime grants. Signed checkpoints and retention workflows follow in Phase 4.
 - Runtime database credentials and code issuing arbitrary SQL are trusted boundaries. Provision and rotate migration and runtime credentials separately for deployment.
@@ -32,7 +36,7 @@ Phase 0 baseline documented. Phase 1 is in progress. The identity and organisati
 - Docker startup on this host is blocked by the missing QEMU dependency for Colima. Compose shape can be validated independently. Testcontainers remains the default database test path in CI.
 - The managed JUnit Jupiter 6 runtime is a recorded deviation from the specification’s JUnit 5 line item. See [ADR 0002](adr/0002-supported-spring-stack.md).
 
-## Verification results
+## Foundation baseline verification
 
 | Command or scenario | Actual result |
 |---|---|
@@ -44,6 +48,28 @@ Phase 0 baseline documented. Phase 1 is in progress. The identity and organisati
 | Compose configuration and Keycloak realm JSON validation | Passed. Full Compose startup and the Docker-backed Testcontainers path remain unverified because Colima requires QEMU on this host. |
 | Playwright browser scenarios | Passed 2 tests on installed Chrome with standalone Keycloak 26.8.2 and native PostgreSQL. Verified real OIDC login and logout, the HttpOnly SameSite session cookie, workspace selection, foreign workspace rejection and missing-CSRF rejection. A concurrent build replaced the JAR during the first attempt. The passing run used an isolated copy of the final JAR. |
 
+## Session management verification
+
+| Command or scenario | Actual result |
+|---|---|
+| `make test` with Java 21.0.9 and disposable native PostgreSQL 16.14 | Passed 6 backend tests and 3 frontend tests. Flyway applied the foundation migration to an empty database. The executable API JAR, strict TypeScript check and web production build passed. Rollup reported existing Zod annotation warnings. |
+| `make e2e` with installed Chrome, standalone Keycloak 26.8.2 and native PostgreSQL | All 3 scenarios passed. Confirmed OIDC login and logout, workspace isolation, session visibility, CSRF enforcement, foreign and unknown target equivalence, self-revocation rejection, and protected-route denial after remote revocation. The API emitted one revocation log event. |
+| Standalone Compose configuration validation, Keycloak realm JSON validation and `git diff --check` | Passed. Full Compose startup and Docker Testcontainers remain unverified because the Docker daemon is unavailable on this host. |
+
+## Security assessment
+
+Reviewed the implemented application, database, dependency and infrastructure surface. Added tenant-bound RLS through Flyway V2, explicit API route grants, verified OpenAPI access, cookie-only session tracking, consistent repeat revocation, and build and CI hardening. Verified the V1-to-V2 upgrade, 8 backend tests, 3 frontend tests and the production builds. All 3 Playwright scenarios passed with embedded Tomcat 11.0.29, standalone Keycloak and native PostgreSQL. Docker-backed CI, patched production JVMs and the remaining release controls are open. See the [prioritised findings](security/ASSESSMENT.md) and [production readiness checklist](security/PRODUCTION_READINESS.md). Phase 2 remains gated.
+
+## Workspace frontend design
+
+Refined the existing sign-in, workspace selection, browser sessions and unavailable-page experiences with shared responsive light and dark panels and controls. Added role labels, visible and announced selection, bidirectional cursor navigation, keyboard bypass and clearer loading, empty, retry and access-denied states. The same OIDC and workspace/session APIs remain in use. The portfolio dashboard, property workspace, Compliance Passport, certificate vault, regulatory intelligence, onboarding, evidence packs and billing still depend on later gated modules.
+
+Six frontend component tests and the strict TypeScript and Vite build passed. All three Playwright scenarios passed on Chrome against standalone Keycloak and native PostgreSQL. The browser run verified keyboard skip and disclosure navigation, 320 CSS-pixel reflow, and no axe violations in the scanned sign-in, selected workspace and dark-mode account states. The npm registry reported no known advisories for the updated lockfile.
+
+## Production readiness assessment
+
+Mapped the master specification to current functionality and release evidence. Added a foundation staging configuration with HTTPS ingress, runtime-only credentials, private API routing and CI validation of the Compose shape. Verified the native foundation suite, logical database restore and native HTTPS gateway smoke. The three browser scenarios passed across separate runs after correcting a shared-session fixture assumption. A full deployment-equivalent run is pending. Security and infrastructure evidence is recorded in the [engineering readiness report](operations/ENGINEERING_READINESS_REPORT.md). The [production launch checklist](security/PRODUCTION_READINESS.md) records the remaining owner decisions and verification gates. No environment or paid integration was activated. Phase 2 remains gated.
+
 ## Next recommended task
 
-Finish the Phase 1 identity lifecycle and privileged membership management, then rerun the authentication and tenant isolation gates with the full local stack and CI before opening Phase 2.
+Implement and verify MFA and step-up authentication, then use it to gate invitations and audited membership administration. Rerun the authentication, authorisation and isolation gates with the full stack and CI before opening Phase 2.

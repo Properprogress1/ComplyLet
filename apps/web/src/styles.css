@@ -3,18 +3,87 @@
 @layer base {
   :root {
     color-scheme: light dark;
-    --background: light-dark(#f7f9fc, #101a27);
+    --background: light-dark(#f3f6f8, #101a27);
+    --surface: light-dark(#fff, #172333);
     --foreground: light-dark(#12223a, #ecf2f8);
+    --muted: light-dark(#4b6074, #b8c8d9);
+    --border: light-dark(#6a7f92, #7a8da3);
+    --line: light-dark(#dce4eb, #35485c);
     --accent: light-dark(#005d54, #89e4d4);
+    --accent-surface: light-dark(#eaf5f2, #203c40);
+    --primary-ink: light-dark(#fff, #102125);
+    --error: light-dark(#8c322e, #ffd0c9);
+    --error-surface: light-dark(#fff1ee, #432c31);
+    --navy: #12223a;
   }
   body { @apply m-0 min-h-screen font-sans; background: var(--background); color: var(--foreground); }
-  header { @apply border-b border-slate-500 px-6 py-4 font-semibold; }
-  main { @apply mx-auto max-w-3xl space-y-5 p-6 sm:p-10; }
-  h1 { @apply text-3xl font-semibold; }
-  h2 { @apply text-xl font-semibold; }
-  a { @apply underline underline-offset-4; color: var(--accent); }
-  button, .action { @apply inline-block cursor-pointer rounded-md border px-3 py-2 font-medium; color: var(--accent); }
-  button:disabled { @apply cursor-wait opacity-60; }
-  :focus-visible { @apply outline-2 outline-offset-4; outline-color: var(--accent); }
-  li { @apply my-2; }
+  h1 { font-size: clamp(1.875rem, 3vw, 2.5rem); line-height: 1.15; letter-spacing: -.035em; font-weight: 700; overflow-wrap: anywhere; }
+  h2 { font-size: 1.125rem; line-height: 1.35; font-weight: 650; }
+  h3 { font-size: 1rem; font-weight: 650; }
+  p { line-height: 1.55; overflow-wrap: anywhere; }
+  a { color: var(--accent); text-underline-offset: .2em; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+}
+
+@layer components {
+  .masthead { background: var(--navy); color: #fff; }
+  .masthead-inner, .shell { width: min(100%, 76rem); margin-inline: auto; padding-inline: clamp(1rem, 4vw, 3rem); }
+  .masthead-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 4.5rem; }
+  .wordmark { color: #fff; font-size: 1.375rem; font-weight: 750; letter-spacing: -.055em; text-decoration: none; }
+  .wordmark span { color: #89e4d4; }
+  .masthead :focus-visible { outline-color: #89e4d4; }
+
+  .skip-link { position: fixed; z-index: 1; inset: .75rem auto auto .75rem; padding: .75rem 1rem; background: var(--surface); border-radius: .375rem; }
+  .skip-link:not(:focus) { position: absolute; clip-path: inset(50%); width: 1px; height: 1px; padding: 0; overflow: hidden; white-space: nowrap; }
+
+  .shell { padding-block: clamp(2rem, 6vw, 4.5rem); }
+  .page-heading { display: grid; gap: .75rem; margin-block-end: 2rem; }
+  .page-heading p, .stack > p:not(.feedback) { color: var(--muted); }
+  .workspace-layout { display: grid; gap: 1.25rem; align-items: start; }
+  .panel { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: .875rem; }
+  .panel-heading, .panel-body { padding: 1.125rem 1.25rem; }
+  .panel-heading { border-bottom: 1px solid var(--line); }
+  .stack { display: grid; gap: 1rem; justify-items: start; }
+  .access-shell { width: min(100%, 39rem); margin-inline: auto; padding: clamp(2rem, 8vw, 6rem) 1rem; }
+  .access-panel { padding: clamp(1.5rem, 5vw, 2.5rem); }
+
+  .button { display: inline-flex; justify-content: center; align-items: center; min-height: 2.75rem; padding: .5rem .875rem; border: 1px solid var(--border); border-radius: .5rem; color: var(--foreground); font-weight: 650; font-size: .875rem; text-decoration: none; cursor: pointer; }
+  .button:hover:not(:disabled) { background: var(--accent-surface); }
+  .button:disabled { opacity: .6; cursor: default; }
+  .button-primary { background: var(--accent); border-color: var(--accent); color: var(--primary-ink); }
+  .button-primary:hover:not(:disabled) { background: var(--foreground); border-color: var(--foreground); }
+  .button-header { color: #fff; border-color: #74869c; }
+  .button-header:hover:not(:disabled) { background: #293d55; }
+
+  .workspace-list { padding: .375rem .625rem; }
+  .workspace-list li + li { border-top: 1px solid var(--line); }
+  .workspace-button { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .75rem; text-align: start; padding: .875rem .625rem; min-height: 4.5rem; border-radius: .5rem; cursor: pointer; }
+  .workspace-button:hover, .workspace-button[aria-pressed="true"] { background: var(--accent-surface); }
+  .workspace-button[aria-disabled="true"] { cursor: wait; }
+  .workspace-initial { display: grid; place-items: center; width: 2.5rem; aspect-ratio: 1; border-radius: .5rem; background: var(--accent-surface); color: var(--accent); font-weight: 700; }
+  .workspace-details { display: grid; gap: .2rem; overflow-wrap: anywhere; }
+  .workspace-details span, .session-date { color: var(--muted); font-size: .875rem; }
+  .workspace-action { color: var(--accent); font-size: .875rem; font-weight: 650; }
+  .pagination { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding: .875rem 1rem; font-size: .875rem; }
+
+  .account-panel summary { cursor: pointer; font-weight: 650; padding-block: .625rem; min-height: 2.75rem; }
+  .account-panel details[open] summary { margin-block-end: .5rem; }
+  .session-list { width: 100%; }
+  .session-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; border-top: 1px solid var(--line); padding-block: .75rem; }
+  .session-date { display: block; }
+  .session-current { color: var(--accent); font-size: .875rem; font-weight: 650; }
+
+  .feedback { border-radius: .5rem; padding: .75rem; }
+  .feedback-error { color: var(--error); background: var(--error-surface); }
+  .feedback + .button { margin-top: .5rem; }
+  .skeleton { height: 2.5rem; width: 100%; max-width: 18rem; margin-block-start: .5rem; background: var(--line); border-radius: .5rem; }
+
+  @media (min-width: 48rem) {
+    .workspace-layout { grid-template-columns: minmax(0, 2fr) minmax(15rem, 1fr); }
+  }
+  @media (max-width: 24rem) {
+    .workspace-button { gap: .5rem; }
+    .workspace-initial { display: none; }
+    .workspace-button { grid-template-columns: minmax(0, 1fr) auto; }
+  }
 }

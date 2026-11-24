@@ -26,3 +26,5 @@ flowchart LR
 | Audit and security | Audit contracts, integrity checks and monitoring |
 
 Modules call public services or handle explicit events. Repositories are internal. Use synchronous calls for immediate consistency and an outbox with idempotent consumers when asynchronous workflows arrive. PostgreSQL persistence is shared physically, with module ownership and tenant-aware constraints. Use JDBC for transaction-local scope and the initial security queries so their execution shares the same database connection.
+
+The staging package uses an HTTPS gateway to serve the compiled React bundle and proxy selected paths to a private API. The operator supplies an isolated PostgreSQL database, OIDC issuer and secrets. Migration credentials stay outside the API container. Staging uses one API instance while browser sessions are process-local. See the [staging configuration](../../infrastructure/environments/staging/README.md).

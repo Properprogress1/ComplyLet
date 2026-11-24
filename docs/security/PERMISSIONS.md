@@ -16,6 +16,8 @@ All workspace operations require verified identity and active membership. Branch
 
 Team administration, owner transfer and sensitive exports require explicit grants and step-up. Public registration confers no agency access. Regulatory publication requires separate reviewer authority.
 
+Browser session visibility and revocation are account-scoped by verified OIDC issuer and subject. They require no tenant role. Only another active session for the same identity can be revoked, with a valid CSRF token. Current-session logout uses the existing OIDC logout flow. OpenAPI access requires a verified sign-in and is disabled by default.
+
 ## Proposed controls for future operations
 
 | Operation | Grant | Required scope |

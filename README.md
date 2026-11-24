@@ -4,7 +4,7 @@ ComplyLet is a compliance and evidence platform for English letting agencies. Th
 
 ## Local development
 
-Install Java 21, Node.js 22.12 or later with Corepack, and Docker with Compose.
+Install a currently patched Java 21 build, Node.js 22.12 or later with Corepack, and Docker with Compose. See the JVM advisory in the [security assessment](docs/security/ASSESSMENT.md) for the minimum patched version and interim mitigation.
 
 ```sh
 make setup
@@ -20,3 +20,5 @@ For isolated native PostgreSQL verification, initialise a fresh database named `
 Development uses a Vite proxy to keep the browser on the same origin as the BFF. Deployments require a same-origin HTTPS gateway, secure session cookies and a separate Flyway migration step. Local Compose credentials and Keycloak development mode are for loopback use.
 
 See [the specification](docs/MASTER_SPECIFICATION.md), [architecture](docs/architecture/SYSTEM.md) and [project status](docs/PROGRESS.md).
+
+See the [foundation staging configuration](infrastructure/environments/staging/README.md) and [production readiness report](docs/operations/ENGINEERING_READINESS_REPORT.md) for deployment requirements and release gates.

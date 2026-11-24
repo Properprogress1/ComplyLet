@@ -14,7 +14,7 @@ createRoot(root).render(
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<App />} />
-          <Route path="*" element={<main><h1>Page unavailable</h1><a href="/">Return to ComplyLet</a></main>} />
+          <Route path="*" element={<main className="access-shell"><section className="panel access-panel stack"><h1>Page unavailable</h1><a className="button button-primary" href="/">Return to ComplyLet</a></section></main>} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

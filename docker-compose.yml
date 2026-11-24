@@ -22,6 +22,8 @@ services:
       KC_BOOTSTRAP_ADMIN_USERNAME: local-admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: local-admin
       KC_HOSTNAME: http://localhost:8080
+      # CVE-2026-114938 mitigation until the container JVM baseline is verified.
+      JAVA_OPTS_APPEND: "-XX:-UseBASE64Intrinsics"
     ports:
       - "127.0.0.1:8080:8080"
     volumes:

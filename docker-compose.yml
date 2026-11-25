@@ -30,7 +30,7 @@ services:
       - ./infrastructure/keycloak/realm.json:/opt/keycloak/data/import/complylet-realm.json:ro
       - ./infrastructure/keycloak/themes/complylet:/opt/keycloak/themes/complylet:ro
   mailpit:
-    image: axllent/mailpit:v1.28.0
+    image: axllent/mailpit:v1.34.0
     ports:
       - "127.0.0.1:8025:8025"
 volumes:

@@ -11,7 +11,7 @@ make setup
 make dev
 ```
 
-Open http://localhost:5173. For the optional local workspace fixture, wait for the API at http://localhost:8081/actuator/health, then run `make seed`. The synthetic login is `workspace-owner` with password `local-owner-only`. Registration and recovery email appears at http://localhost:8025. The development realm and SQL credentials are scoped to this local stack.
+Open http://localhost:5173. For the optional local workspace fixture, wait for the API at http://localhost:8081/actuator/health, then run `make seed`. The synthetic login is `workspace-owner` with password `local-owner-only`. Mailpit captures registration and recovery email at http://localhost:8025. See [Email configuration](docs/EMAIL_CONFIGURATION.md) for outbound delivery and native Keycloak setup. The development realm and SQL credentials are scoped to this local stack.
 
 `make test` runs architecture and PostgreSQL integration tests via Testcontainers, frontend tests and the production web build. For the browser test, run `corepack pnpm --filter @complylet/web exec playwright install chromium`, seed the running stack and run `make e2e`.
 

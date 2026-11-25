@@ -3,7 +3,7 @@
 This configuration packages Phase 1 for operator-supplied, separate staging with synthetic data. It uses an HTTPS static web gateway and a private API. PostgreSQL and OIDC are external. Use one API instance because sessions are process-local.
 
 1. Obtain approval for the staging host, registry, isolated database and identity provider. Select provenance-verified, digest-pinned Java 21 and Caddy base images. Verify the JVM patch level and scan all exact images.
-2. Set the exact HTTPS application origin without a trailing slash and the certificate DNS name. Configure an isolated confidential OIDC client with code flow, PKCE S256, verified email, the exact callback at /login/oauth2/code/complylet and the exact post-logout URI at /. Verify issuer and public DNS resolution.
+2. Set the exact HTTPS application origin without a trailing slash and the certificate DNS name. Configure an isolated confidential OIDC client with code flow, PKCE S256, verified email, the exact callback at /login/oauth2/code/complylet and the exact post-logout URI at /. Verify issuer and public DNS resolution. Configure and test registration email using the [Keycloak email configuration](../../../docs/EMAIL_CONFIGURATION.md).
 3. Provision PostgreSQL with certificate verification and a trusted root for the JDBC driver. Provision separate migration and runtime roles following the [database design](../../../docs/architecture/DATABASE.md). Apply Flyway through separate authorised tooling using migration credentials. Confirm schema history, grants and RLS before starting the API.
 4. Supply secrets and TLS files through the staging secret manager and ensure the relevant container UID 65532 can read its files. Keep real environment paths in an ignored file such as .env.staging. The operator owns DNS, TLS rotation and private ingress or port forwarding. The gateway binds to host loopback and only exposes the specified HTTPS host.
 5. Check dependencies, secrets, image advisories, SBOMs and signature/provenance evidence before deploying.
@@ -29,6 +29,27 @@ Check that the web shell, API and blocked private routes omit both `Server` and 
     sh infrastructure/environments/staging/check-response-headers.sh https://staging.example.invalid:8443
 
 Record image digests, migration version, change approval and evidence. To roll back, use the previous reviewed configuration and images if schema compatibility has been checked. If incompatible, follow the approved forward fix or isolated restore procedure and reconcile writes after the restore point.
+
+## Vercel frontend
+
+A Vercel deployment of the React build needs a reachable HTTPS staging gateway. Vercel serves the frontend and forwards the paths below to the gateway. The gateway routes them to the private Spring Boot API. Start the gateway, API, PostgreSQL and Keycloak before enabling these rewrites.
+
+Set `STAGING_APP_ORIGIN=https://comply-let.vercel.app` and keep `STAGING_HOST` set to the separate gateway hostname. Register `https://comply-let.vercel.app/login/oauth2/code/complylet` and `https://comply-let.vercel.app/` as the exact Keycloak callback and post-logout redirect. Keep secure cookies enabled and leave the API, database and management endpoints on private network paths.
+
+Once the gateway is reachable from Vercel, replace `gateway.example.invalid` in the example with its HTTPS hostname. Add the rewrites to `vercel.json` in the configured Vercel Project Root Directory, ahead of any frontend fallback rule. [Vercel external rewrites](https://vercel.com/docs/routing/rewrites#rewrites-to-external-origins)
+
+```json
+{
+  "rewrites": [
+    { "source": "/api/v1/:path*", "destination": "https://gateway.example.invalid/api/v1/:path*" },
+    { "source": "/oauth2/authorization/complylet", "destination": "https://gateway.example.invalid/oauth2/authorization/complylet" },
+    { "source": "/login/oauth2/code/complylet", "destination": "https://gateway.example.invalid/login/oauth2/code/complylet" },
+    { "source": "/logout", "destination": "https://gateway.example.invalid/logout" }
+  ]
+}
+```
+
+From a signed-out browser, open the Vercel frontend and confirm that `GET /api/v1/session` returns `401` with `Cache-Control: no-store` and the app displays **Sign in**. Confirm that sign-in redirects to the expected Keycloak issuer, returns to the Vercel origin, establishes a secure session and allows logout. Verify that session and authentication responses are never cached.
 
 ## Logical recovery rehearsal
 

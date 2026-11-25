@@ -1,6 +1,6 @@
 # ComplyLet implementation progress
 
-Updated 24 November 2026.
+Updated 25 November 2026.
 
 ## Current phase
 
@@ -69,6 +69,14 @@ Six frontend component tests and the strict TypeScript and Vite build passed. Al
 ## Production readiness assessment
 
 Mapped the master specification to current functionality and release evidence. Added a foundation staging configuration with HTTPS ingress, runtime-only credentials, private API routing and CI validation of the Compose shape. Verified the native foundation suite, logical database restore and native HTTPS gateway smoke. The three browser scenarios passed across separate runs after correcting a shared-session fixture assumption. A full deployment-equivalent run is pending. Security and infrastructure evidence is recorded in the [engineering readiness report](operations/ENGINEERING_READINESS_REPORT.md). The [production launch checklist](security/PRODUCTION_READINESS.md) records the remaining owner decisions and verification gates. No environment or paid integration was activated. Phase 2 remains gated.
+
+## Email verification
+
+Retained Keycloak as the identity and verification authority. The local realm and Compose now load a ComplyLet email and login theme, a 30-minute verification link, a 60-second native resend cooldown and the native verified email-change action. Registration verifies the address before allowing password setup. Spring continues to enforce the trusted OIDC verification claim and separate tenant membership checks.
+
+Verification passed on the isolated local stack with Keycloak 26.8.2, Mailpit, native PostgreSQL and Chrome. Maven verify passed 8 tests, Vitest passed 6 tests, and Playwright passed all 4 scenarios. The new browser scenario covers registration, multipart mail, 30-minute token configuration, immediate resend rejection, scanner-style access without a registration cookie, password setup after verification, invalid-link rejection, link replay and access without organisation membership. The web build, both Compose configuration checks and whitespace validation passed.
+
+[Email configuration](EMAIL_CONFIGURATION.md) documents separate Mailpit and outbound SMTP settings, Resend, future SES migration, DNS, vault-backed credentials and acceptance tests. No outbound sender or provider has been provisioned. Real-delivery acceptance, per-IP and hourly per-email limits, recovery and email-change verification, broader abuse tests and application notification outbox and webhook work remain open. The Phase 2 gate remains closed.
 
 ## Next recommended task
 

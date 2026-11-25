@@ -14,3 +14,15 @@
 | 9 | Document expansion cases for regulatory API, insurers, institutions, new jurisdictions and housing workflows. Validate demand and sources before implementation. |
 
 Phase 1 negative tests cover anonymous access, unverified identity, inactive membership, cross-tenant and unknown workspace responses, wrong-tenant audit writes, inability to update or delete audit rows, and transaction context cleanup. Add isolation tests for each new resource, search and export path before shipping it.
+
+Within Phase 1, self-service browser session visibility and application session revocation use the existing server sessions. Next, verify provider-backed MFA and step-up before adding invitation and privileged membership writes. Verify provider-side revocation, shared session storage, recovery email, rate limits and login anomaly monitoring before marking the identity lifecycle complete.
+
+Phase 1 assessment controls and release evidence are tracked in the [security assessment](security/ASSESSMENT.md) and [production readiness checklist](security/PRODUCTION_READINESS.md). Retest the bound RLS scope and explicit API grants with every tenant module.
+
+The Phase 1 React shell establishes responsive light and dark page surfaces, keyboard navigation, and state patterns for the existing account and workspace flows. Add business navigation and screens with their authorised endpoints in the scheduled phases.
+
+The [staging candidate](../infrastructure/environments/staging/README.md) packages the verified foundation for synthetic use. The [engineering readiness report](operations/ENGINEERING_READINESS_REPORT.md) maps outstanding scope and release evidence to the master specification.
+
+Verify that deployed staging ingress removes `Server` and `X-Powered-By` from static, proxied and gateway error responses.
+
+Phase 1 registration uses Keycloak verification and SMTP. Apply the [email configuration](EMAIL_CONFIGURATION.md) and verify the provider, resend limits and real delivery before opening registration on a public deployment. See [ADR 0004](adr/0004-keycloak-verification-and-email-transport.md).
